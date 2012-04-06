@@ -52,17 +52,15 @@ class sendgrid:
                 validate_cert=False, connect_timeout=5, request_timeout=10)
 
     def _finish_send(self, response, data):
-        print "FINISH", response
         self.concurrent -= 1
         if response.error:
             self.stats['failures'] += 1
             if response.code != 400:
                 self.write_queue.appendleft(data)
-                self.error_level += (1 + self.error_level/2)
+                self.error_level = min(settings.get('max_backoff') or 15, (self.error_level + 1 + self.error_level/2))
             logging.exception("send failed", response.error)
             if response.buffer: print response.buffer.getvalue()
         else:
             self.stats['successes'] += 1
             body = response.buffer.getvalue()
-            print "BODY", body
 
