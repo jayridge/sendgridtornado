@@ -1,11 +1,10 @@
 from tornado import ioloop, httpclient
 import settings
 import logging
-import urllib
 import time
-import math
 import functools
 from collections import deque
+from lib.utils import urlencode
 
 class sendgrid:
     def __init__(self, loop=None):
@@ -14,10 +13,10 @@ class sendgrid:
         self.http_client.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
         self.write_queue = deque()
         self.started = time.time()
-        self.concurrent = 0 
-        self.max_concurrent = 5 
-        self.error_level = 0 
-        self.stats = { 
+        self.concurrent = 0
+        self.max_concurrent = 5
+        self.error_level = 0
+        self.stats = {
             'sends':0,
             'failures':0,
             'successes':0,
@@ -48,7 +47,7 @@ class sendgrid:
             self.stats['sends'] += 1
             self.http_client.fetch(settings.get('sendgrid_url'),
                 functools.partial(self._finish_send, data=data),
-                follow_redirects=False, method="POST", body = urllib.urlencode(data, doseq=1),
+                follow_redirects=False, method="POST", body=urlencode(data, doseq=1),
                 validate_cert=False, connect_timeout=5, request_timeout=10)
 
     def _finish_send(self, response, data):
@@ -63,4 +62,3 @@ class sendgrid:
         else:
             self.stats['successes'] += 1
             body = response.buffer.getvalue()
-
