@@ -1,7 +1,5 @@
-import sys
 import tornado.options
 import tornado.web
-from tornado.escape import utf8
 import settings
 from settings import options, env
 import logging
@@ -36,7 +34,7 @@ class PushHandler(BaseHandler):
         missing = [y for y in required if y not in self.request.arguments]
         if missing:
             return self.error(status_code=400, status_txt="missing required arguments", data=missing)
-                
+
         data = {}
         for key in attrs:
             if key not in self.request.arguments: continue
