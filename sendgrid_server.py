@@ -35,6 +35,8 @@ class PushHandler(BaseHandler):
         if missing:
             return self.error(status_code=400, status_txt="missing required arguments", data=missing)
 
+        account = self.get_argument(account)
+        acc = settings.get('accounts').get(account)
         data = {}
         for key in attrs:
             if key not in self.request.arguments: continue
@@ -42,10 +44,10 @@ class PushHandler(BaseHandler):
                 data[key] = self.get_arguments(key)
             else:
                 data[key] = self.get_argument(key)
-        data['api_user'] = settings.get('api_user')
-        data['api_key'] = settings.get('api_key')
+        data['api_user'] = acc.get('api_user')
+        data['api_key'] = acc.get('api_key')
 
-        self.api_response(_sendgrid.send(data))
+        self.api_response(_sendgrid.send(data, account))
 
 
 class StatsHandler(BaseHandler):

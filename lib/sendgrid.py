@@ -27,7 +27,8 @@ class sendgrid:
     def run_sweeper(self):
         if not self.error_level:
             while len(self.write_queue) and self.concurrent != self.max_concurrent:
-                self.send(self.write_queue.popleft())
+                o = self.write_queue.popleft()
+                self.send(o['data'], o['account'])
         else:
             self.error_level -= 1
 
@@ -39,23 +40,24 @@ class sendgrid:
         stats['uptime'] = time.time() - self.started
         return stats
 
-    def send(self, data):
+    def send(self, data, account='default'):
         if self.error_level:
-            self.write_queue.append(data)
+            self.write_queue.append(dict(data=data,account=account))
         else:
             self.concurrent += 1
             self.stats['sends'] += 1
-            self.http_client.fetch(settings.get('sendgrid_url'),
-                functools.partial(self._finish_send, data=data),
+            acc = settings.get('accounts').get('account')
+            self.http_client.fetch(acc.get('sendgrid_url'),
+                functools.partial(self._finish_send, data=data, account=account),
                 follow_redirects=False, method="POST", body=urlencode(data, doseq=1),
                 validate_cert=False, connect_timeout=5, request_timeout=10)
 
-    def _finish_send(self, response, data):
+    def _finish_send(self, response, data, account):
         self.concurrent -= 1
         if response.error:
             self.stats['failures'] += 1
             if response.code != 400:
-                self.write_queue.appendleft(data)
+                self.write_queue.appendleft(dict(data=data,account=account))
                 self.error_level = min(settings.get('max_backoff') or 15, (self.error_level + 1 + self.error_level/2))
             logging.exception("send failed", response.error)
             if response.buffer: print response.buffer.getvalue()

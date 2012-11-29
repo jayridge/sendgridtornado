@@ -6,9 +6,13 @@ tornado.options.define("environment", default="dev", help="environment")
 options = {
     'dev' : {
         'logging_level' : logging.DEBUG,
-        'sendgrid_url' : 'https://sendgrid.com/api/mail.send.json',
-        'api_user' : '',
-        'api_key' : '',
+        'accounts' : {
+            'default': {
+                'sendgrid_url' : 'https://sendgrid.com/api/mail.send.json',
+                'api_user' : '',
+                'api_key' : '',
+            }
+        }
     }, 
     'prod' : {
         'logging_level' : logging.DEBUG,
